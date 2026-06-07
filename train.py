@@ -18,8 +18,10 @@ import pandas as pd
 import numpy as np
 import xgboost as xgb
 import pickle
+import json
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+from sklearn.metrics import (classification_report, roc_auc_score, confusion_matrix,
+                             precision_score, recall_score, accuracy_score, f1_score)
 
 print("Loading BRFSS 2023 dataset (only the columns we need)...")
 # BRFSS 2023 ships with lowercase column names
@@ -202,3 +204,19 @@ for feat, imp in importances.items():
 with open('xgboost_model.pkl', 'wb') as f:
     pickle.dump(model, f)
 print("\nModel saved to xgboost_model.pkl")
+
+# Save all evaluation metrics to JSON so the app can display them
+tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+metrics_out = {
+    'roc_auc':     float(roc_auc_score(y_test, y_proba)),
+    'recall':      float(recall_score(y_test, y_pred)),
+    'precision':   float(precision_score(y_test, y_pred)),
+    'f1':          float(f1_score(y_test, y_pred)),
+    'accuracy':    float(accuracy_score(y_test, y_pred)),
+    'specificity': float(tn / (tn + fp)),
+    'test_size':   int(len(y_test)),
+    'positive_class_prevalence': float(y_test.mean()),
+}
+with open('metrics.json', 'w') as f:
+    json.dump(metrics_out, f, indent=2)
+print("Evaluation metrics saved to metrics.json")

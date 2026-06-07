@@ -12,7 +12,7 @@ import pickle
 # Page configuration
 # ============================================================
 st.set_page_config(
-    page_title="H3art — Cardiovascular Risk Screening",
+    page_title="H3art - Cardiovascular Risk Screener",
     page_icon="❤️",
     layout="wide",
 )
@@ -41,6 +41,27 @@ st.markdown("""
             border-right-color: rgba(46, 117, 182, 0.25) !important;
             border-bottom-color: rgba(46, 117, 182, 0.25) !important;
             border-left-color: rgba(46, 117, 182, 0.25) !important;
+        }
+
+        /* Hide the anchor link icons that appear on hover next to headers/titles */
+        [data-testid="stHeaderActionElements"] {display: none !important;}
+        h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {display: none !important;}
+        .stMarkdown h1 > div > a,
+        .stMarkdown h2 > div > a,
+        .stMarkdown h3 > div > a,
+        .stMarkdown h4 > div > a,
+        .stMarkdown h5 > div > a,
+        .stMarkdown h6 > div > a {display: none !important;}
+
+        /* Bold + custom font for the primary Predict Risk button */
+        .stButton > button[kind="primary"] {
+            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 1.15rem !important;
+            letter-spacing: 0.6px !important;
+            text-transform: uppercase !important;
+            padding-top: 0.65rem !important;
+            padding-bottom: 0.65rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -118,17 +139,17 @@ def classify_glucose(glucose: int):
 
 def severity_badge(label: str, severity: str):
     """Render a colored info/warning/error badge."""
-    if severity == "normal":  st.success(f"✅  {label}")
-    elif severity == "low":   st.info(f"ℹ️  {label}")
-    elif severity == "moderate": st.warning(f"⚠️  {label}")
-    else:                     st.error(f"🚨  {label}")
+    if severity == "normal":  st.success(label)
+    elif severity == "low":   st.info(label)
+    elif severity == "moderate": st.warning(label)
+    else:                     st.error(label)
 
 # ============================================================
 # Header
 # ============================================================
-st.title("❤️ H3art")
+st.title("H3art - Cardiovascular Risk Screener")
 st.markdown(
-    "##### *Your AI-powered cardiovascular risk screening companion*"
+    "##### *Your cardiovascular risk screening companion*"
 )
 st.markdown(
     "Enter your health information below to estimate your cardiovascular risk. "
@@ -223,17 +244,17 @@ with col1:
         )
         if cigs_per_day <= 10:
             st.info(
-                f"ℹ️  Light smoking ({cigs_per_day}/day). Even low-volume "
+                f"Light smoking ({cigs_per_day}/day). Even low-volume "
                 f"smoking measurably raises cardiovascular risk."
             )
         elif cigs_per_day <= 20:
             st.warning(
-                f"⚠️  Moderate smoking ({cigs_per_day}/day, ≈ 1 pack). "
+                f"Moderate smoking ({cigs_per_day}/day, ≈ 1 pack). "
                 f"Significantly elevated CVD risk. Quitting reduces this risk substantially."
             )
         else:
             st.error(
-                f"🚨  Heavy smoking ({cigs_per_day}/day, ≈ {cigs_per_day/20:.1f} packs). "
+                f"Heavy smoking ({cigs_per_day}/day, ≈ {cigs_per_day/20:.1f} packs). "
                 f"Strongly linked to elevated CVD risk. Please consider speaking "
                 f"with a healthcare professional about cessation support."
             )
@@ -383,10 +404,10 @@ with col2:
     )[1]
 
     other_cancer = st.selectbox(
-        "Have you ever had cancer?",
+        "Have you ever had cancer",
         options=yes_no_unk, format_func=lambda x: x[0],
-        help="Excludes skin cancer.",
     )[1]
+    st.caption("Excludes skin cancer.")
 
     copd = st.selectbox(
         "COPD, emphysema, or chronic bronchitis?",
@@ -415,7 +436,7 @@ with col2:
 # Prediction
 # ============================================================
 st.divider()
-predict_clicked = st.button("🔍  Predict Risk", type="primary", use_container_width=True)
+predict_clicked = st.button("Predict Risk", type="primary", use_container_width=True)
 
 if predict_clicked:
     with st.spinner("Analyzing your cardiovascular risk..."):
@@ -445,14 +466,14 @@ if predict_clicked:
         probability = float(model.predict_proba(user_data)[0][1]) * 100
 
     if prediction == 1:
-        st.error(f"### ⚠️  Elevated Risk — {probability:.1f}% probability")
+        st.error(f"### Elevated Risk — {probability:.1f}% probability")
         st.markdown(
             "The model indicates an **elevated probability** of cardiovascular "
             "risk. Please consult a healthcare professional for proper evaluation. "
             "Early intervention can significantly reduce long-term risk."
         )
     else:
-        st.success(f"### ✅  Low Risk — {probability:.1f}% probability")
+        st.success(f"### Low Risk — {probability:.1f}% probability")
         st.markdown(
             "The model indicates a **low probability** of cardiovascular risk. "
             "Continue with healthy lifestyle habits and regular check-ups."
@@ -462,14 +483,14 @@ if predict_clicked:
 
     if kidney_stones:
         st.info(
-            "📌 You indicated a history of kidney stones. While stones are not a "
+            "You indicated a history of kidney stones. While stones are not a "
             "direct cardiovascular risk factor, they often share underlying "
             "lifestyle factors (hydration, diet, blood pressure). Mention this "
             "to your physician during your next check-up."
         )
 
     st.caption(
-        "⚕️ **Disclaimer**: This tool provides a statistical risk estimate based "
+        "**Disclaimer**: This tool provides a statistical risk estimate based "
         "on self-reported survey data from the CDC BRFSS 2023 study, and is "
         "**not** a medical diagnosis. Always consult a qualified healthcare "
         "provider for medical decisions."
