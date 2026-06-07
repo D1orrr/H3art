@@ -406,10 +406,9 @@ with col2:
         "Have you ever had cancer",
         options=yes_no_unk, format_func=lambda x: x[0],
     )[1]
-    st.caption("Excludes skin cancer.")
 
     copd = st.selectbox(
-        "COPD, emphysema, or chronic bronchitis?",
+        "COPD, emphysema, or chronic bronchitis",
         options=yes_no_unk, format_func=lambda x: x[0],
     )[1]
 
@@ -427,7 +426,7 @@ with col2:
     )
 
     depression = st.selectbox(
-        "Depressive disorder (depression, major depression, dysthymia)?",
+        "Depressive disorder (depression, major depression, dysthymia)",
         options=yes_no_unk, format_func=lambda x: x[0],
     )[1]
 
