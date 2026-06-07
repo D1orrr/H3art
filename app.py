@@ -55,7 +55,7 @@ st.markdown("""
         /* Bold + custom font for the primary Predict Risk button */
         .stButton > button[kind="primary"] {
             font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif !important;
-            font-weight: 800 !important;
+            font-weight: 1200 !important;
             font-size: 1.15rem !important;
             letter-spacing: 0.6px !important;
             text-transform: uppercase !important;
@@ -330,7 +330,7 @@ with col2:
     bp_method = st.selectbox(
         "How would you like to answer?",
         options=["No", "Yes — I've been diagnosed with high blood pressure",
-                 "I know my numbers", "Unknown"],
+                 "Check for specifics", "Unknown"],
         key="bp_method", label_visibility="collapsed",
     )
     if bp_method == "No":
@@ -339,7 +339,7 @@ with col2:
         high_bp = 1
     elif bp_method == "Unknown":
         high_bp = UNK
-    else:  # "I know my numbers"
+    else:
         bpc1, bpc2 = st.columns(2)
         with bpc1:
             systolic = st.number_input("Systolic (top number, mmHg)", 70, 250, 120)
@@ -354,7 +354,7 @@ with col2:
     chol_method = st.selectbox(
         "How would you like to answer?",
         options=["No", "Yes — I've been diagnosed with high cholesterol",
-                 "I know my numbers", "Unknown"],
+                 "Check for specifics", "Unknown"],
         key="chol_method", label_visibility="collapsed",
     )
     if chol_method == "No":
@@ -375,7 +375,7 @@ with col2:
         "How would you like to answer?",
         options=["No", "Pre-diabetes / borderline",
                  "Yes — I've been diagnosed with diabetes",
-                 "I know my fasting blood sugar", "Unknown"],
+                 "Check for specifics (Fasting is required)", "Unknown"],
         key="diab_method", label_visibility="collapsed",
     )
     if diab_method == "No":
@@ -413,7 +413,7 @@ with col2:
     )[1]
 
     kidney = st.selectbox(
-        "Kidney disease?",
+        "Kidney disease",
         options=yes_no_unk, format_func=lambda x: x[0],
         help="Does not include kidney stones, bladder infection, or incontinence.",
     )[1]
