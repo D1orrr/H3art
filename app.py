@@ -13,7 +13,6 @@ import pickle
 # ============================================================
 st.set_page_config(
     page_title="H3art - Cardiovascular Risk Screener",
-    page_icon="❤️",
     layout="wide",
 )
 
@@ -168,7 +167,7 @@ col1, col2 = st.columns(2, gap="large")
 # LEFT COLUMN: Demographics, Body, Lifestyle
 # ============================================================
 with col1:
-    st.subheader("👤 Demographics & Lifestyle")
+    st.subheader("Demographics & Lifestyle")
 
     # ---- Age (numeric input) ----
     age_years = st.number_input(
@@ -323,7 +322,7 @@ with col1:
 # RIGHT COLUMN: Medical history
 # ============================================================
 with col2:
-    st.subheader("🩺 Medical History")
+    st.subheader("Medical History")
     st.caption("Have you ever been told by a doctor or health professional that you have…")
 
     # ---------- BLOOD PRESSURE (hybrid input) ----------
