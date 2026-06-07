@@ -19,6 +19,8 @@ st.set_page_config(
 # Hide Streamlit's default chrome + running-man status indicator
 st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap');
+            
         /* Hide Streamlit hamburger menu, footer, deploy button */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
@@ -55,13 +57,12 @@ st.markdown("""
         /* Bold + custom font for the primary Predict Risk button */
         .stButton > button[kind="primary"] {
             font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif !important;
-            font-weight: 1200 !important;
+            font-weight: 900 !important;
             font-size: 1.15rem !important;
             letter-spacing: 0.6px !important;
             text-transform: uppercase !important;
             padding-top: 0.65rem !important;
             padding-bottom: 0.65rem !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
