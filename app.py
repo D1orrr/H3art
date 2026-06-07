@@ -56,7 +56,7 @@ st.markdown("""
 
         /* Bold + custom font for the primary Predict Risk button */
         .stButton > button[kind="primary"] {
-            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif !important;
+            font-family: 'Montserrat' !important;
             font-weight: 900 !important;
             font-size: 1.15rem !important;
             letter-spacing: 0.6px !important;
