@@ -1,41 +1,27 @@
-"""
-Heart Disease Risk Screening Tool
-Streamlit web application powered by XGBoost trained on BRFSS 2023 data.
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
 
-# ============================================================
-# Page configuration
-# ============================================================
 st.set_page_config(
     page_title="H3art - Cardiovascular Risk Screener",
     layout="wide",
 )
 
-# Hide Streamlit's default chrome + running-man status indicator
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap');
             
-        /* Hide Streamlit hamburger menu, footer, deploy button */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         .stDeployButton {display: none !important;}
 
-        /* Hide the "running man" status widget at top-right */
         [data-testid="stStatusWidget"] {display: none !important;}
 
-        /* Hide the entire toolbar (deploy + status + menu) as a belt-and-braces */
         [data-testid="stToolbar"] {visibility: hidden !important;}
 
-        /* Hide top decoration bar */
         [data-testid="stDecoration"] {display: none !important;}
 
-        /* Force the default Streamlit spinner to be a clean circular ring */
         .stSpinner > div {
             border-width: 4px !important;
             border-top-color: #2E75B6 !important;
@@ -44,7 +30,6 @@ st.markdown("""
             border-left-color: rgba(46, 117, 182, 0.25) !important;
         }
 
-        /* Hide the anchor link icons that appear on hover next to headers/titles */
         [data-testid="stHeaderActionElements"] {display: none !important;}
         h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {display: none !important;}
         .stMarkdown h1 > div > a,
@@ -54,7 +39,6 @@ st.markdown("""
         .stMarkdown h5 > div > a,
         .stMarkdown h6 > div > a {display: none !important;}
 
-        /* Bold + custom font for the primary Predict Risk button */
         .stButton > button[kind="primary"] {
             font-family: 'Montserrat' !important;
             font-weight: 900 !important;
@@ -66,9 +50,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# Load model
-# ============================================================
 @st.cache_resource
 def load_model():
     with open('xgboost_model.pkl', 'rb') as f:
@@ -76,14 +57,9 @@ def load_model():
 
 model = load_model()
 
-# Sentinel for "Unknown" -- becomes NaN, which XGBoost handles natively
 UNK = None
 
-# ============================================================
-# Helpers
-# ============================================================
 def age_to_bracket(age_years: int) -> int:
-    """Map a numeric age to BRFSS _AGEG5YR bracket (1-13)."""
     if age_years < 18: return 1
     if age_years <= 24: return 1
     if age_years <= 29: return 2
@@ -97,10 +73,9 @@ def age_to_bracket(age_years: int) -> int:
     if age_years <= 69: return 10
     if age_years <= 74: return 11
     if age_years <= 79: return 12
-    return 13  # 80+
+    return 13
 
 def compute_bmi_category(weight_kg: float, height_m: float):
-    """Return (BMI value, category code 1-4, category label)."""
     if weight_kg <= 0 or height_m <= 0:
         return None, UNK, ""
     bmi = weight_kg / (height_m ** 2)
@@ -110,7 +85,6 @@ def compute_bmi_category(weight_kg: float, height_m: float):
     return bmi, 4, f"Obese (BMI {bmi:.1f})"
 
 def classify_bp(sys: int, dia: int):
-    """Return (category label, severity, model code 0/1) using AHA guidelines."""
     if sys > 180 or dia > 120:
         return "Hypertensive Crisis — seek immediate medical care", "critical", 1
     if sys >= 140 or dia >= 90:
@@ -122,7 +96,6 @@ def classify_bp(sys: int, dia: int):
     return "Normal blood pressure", "normal", 0
 
 def classify_chol(total: int):
-    """Return (label, severity, model code 0/1)."""
     if total >= 240:
         return "High cholesterol", "high", 1
     if total >= 200:
@@ -130,7 +103,6 @@ def classify_chol(total: int):
     return "Desirable cholesterol", "normal", 0
 
 def classify_glucose(glucose: int):
-    """Return (label, severity, model code 0/1/2) from fasting glucose mg/dL."""
     if glucose >= 126:
         return "Diabetes range", "high", 2
     if glucose >= 100:
@@ -138,15 +110,11 @@ def classify_glucose(glucose: int):
     return "Normal blood sugar", "normal", 0
 
 def severity_badge(label: str, severity: str):
-    """Render a colored info/warning/error badge."""
     if severity == "normal":  st.success(label)
     elif severity == "low":   st.info(label)
     elif severity == "moderate": st.warning(label)
     else:                     st.error(label)
 
-# ============================================================
-# Header
-# ============================================================
 st.title("H3art - Cardiovascular Risk Screener")
 st.markdown(
     "##### *Your cardiovascular risk screening companion*"
@@ -159,32 +127,23 @@ st.markdown(
 )
 st.divider()
 
-# ============================================================
-# Inputs
-# ============================================================
 col1, col2 = st.columns(2, gap="large")
 
-# ============================================================
-# LEFT COLUMN: Demographics, Body, Lifestyle
-# ============================================================
 with col1:
     st.subheader("Demographics & Lifestyle")
 
-    # ---- Age (numeric input) ----
     age_years = st.number_input(
         "Age (years)",
         min_value=18, max_value=120, value=40, step=1,
     )
     age = age_to_bracket(age_years)
 
-    # ---- Sex ----
     sex = st.selectbox(
         "Sex",
         options=[("Female", 0), ("Male", 1)],
         format_func=lambda x: x[0],
     )[1]
 
-    # ---- Height + Weight -> BMI ----
     st.markdown("**Height & Weight**")
     unit_system = st.radio(
         "Units", options=["Metric (cm / kg)", "Imperial (ft-in / lbs)"],
@@ -219,7 +178,6 @@ with col1:
             severity_str = "normal" if bmi_code == 2 else ("moderate" if bmi_code == 3 else ("low" if bmi_code == 1 else "high"))
             severity_badge(bmi_label, severity_str)
 
-    # ---- Smoking (no more "100 cigarettes" phrasing) ----
     smoking_selection = st.selectbox(
         "Smoking status",
         options=[
@@ -232,7 +190,6 @@ with col1:
     )
     smoking = smoking_selection[1]
 
-    # Conditional follow-up for current smokers
     cigs_per_day = None
     if smoking_selection[2] == "current":
         cigs_per_day = st.number_input(
@@ -259,7 +216,6 @@ with col1:
                 f"with a healthcare professional about cessation support."
             )
 
-    # ---- Alcohol (category dropdown) ----
     alcohol_choice = st.selectbox(
         "Alcohol consumption (drinks per week)",
         options=[
@@ -273,18 +229,15 @@ with col1:
         format_func=lambda x: x[0],
     )[1]
 
-    # Map to "Heavy Alcohol" binary using sex-aware thresholds
-    # (Men > 14/week OR Women > 7/week per BRFSS _RFDRHV8 definition)
     if alcohol_choice == "unknown":
         alcohol = UNK
     elif alcohol_choice == "very_high":
         alcohol = 1
-    elif alcohol_choice == "high":     # 8-14: heavy only if female (>7)
+    elif alcohol_choice == "high":     
         alcohol = 1 if sex == 0 else 0
-    else:                              # 0, light, moderate (1-7)
+    else:                             
         alcohol = 0
 
-    # ---- Exercise frequency ----
     exercise_freq = st.selectbox(
         "How often do you exercise?",
         options=[
@@ -298,7 +251,6 @@ with col1:
         format_func=lambda x: x[0],
     )[1]
 
-    # ---- Physical health days (replaces General Health) ----
     ph_unknown = st.checkbox("I don't know / prefer not to say (physical health)")
     if ph_unknown:
         physical_health = UNK
@@ -309,7 +261,6 @@ with col1:
             min_value=0, max_value=30, value=0,
         )
 
-    # ---- Mental health days ----
     mh_unknown = st.checkbox("I don't know / prefer not to say (mental health)")
     if mh_unknown:
         mental_health = UNK
@@ -319,14 +270,10 @@ with col1:
             min_value=0, max_value=30, value=0,
         )
 
-# ============================================================
-# RIGHT COLUMN: Medical history
-# ============================================================
 with col2:
     st.subheader("Medical History")
     st.caption("Have you ever been told by a doctor or health professional that you have…")
 
-    # ---------- BLOOD PRESSURE (hybrid input) ----------
     st.markdown("**Blood Pressure**")
     bp_method = st.selectbox(
         "How would you like to answer?",
@@ -350,7 +297,6 @@ with col2:
         severity_badge(bp_label, bp_severity)
         high_bp = bp_code
 
-    # ---------- CHOLESTEROL (hybrid input) ----------
     st.markdown("**Cholesterol**")
     chol_method = st.selectbox(
         "How would you like to answer?",
@@ -370,7 +316,6 @@ with col2:
         severity_badge(chol_label, chol_severity)
         high_chol = chol_code
 
-    # ---------- DIABETES / BLOOD SUGAR (hybrid input) ----------
     st.markdown("**Diabetes / Blood Sugar**")
     diab_method = st.selectbox(
         "How would you like to answer?",
@@ -395,7 +340,6 @@ with col2:
 
     st.divider()
 
-    # ---------- Remaining yes/no conditions ----------
     yes_no_unk = [("No", 0), ("Yes", 1), ("Unknown", UNK)]
 
     stroke = st.selectbox(
@@ -431,11 +375,9 @@ with col2:
         options=yes_no_unk, format_func=lambda x: x[0],
     )[1]
 
-# ============================================================
-# Prediction
-# ============================================================
+
 st.divider()
-predict_clicked = st.button("Predict Risk", type="primary", use_container_width=True)
+predict_clicked = st.button("**Predict Risk**", type="primary", use_container_width=True)
 
 if predict_clicked:
     with st.spinner("Analyzing your cardiovascular risk..."):

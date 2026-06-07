@@ -1,19 +1,3 @@
-"""
-Train XGBoost classifier for cardiovascular risk prediction.
-Data source: BRFSS 2023 (Behavioral Risk Factor Surveillance System).
-
-Features (16):
-    Demographics:   Age, Sex
-    Body:           BMI Category
-    Lifestyle:      Smoking, Heavy Alcohol, Exercise Frequency
-    Conditions:     High Blood Pressure, High Cholesterol, Diabetes, Stroke,
-                    Other Cancer, COPD, Kidney Disease, Depression
-    Self-rated:     Physical Health Days, Mental Health Days
-
-Target: _MICHD (heart attack or coronary heart disease)
-Unknown / Don't know / Refused -> NaN (XGBoost handles missing natively)
-"""
-
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -24,57 +8,48 @@ from sklearn.metrics import (classification_report, roc_auc_score, confusion_mat
                              precision_score, recall_score, accuracy_score, f1_score)
 
 print("Loading BRFSS 2023 dataset (only the columns we need)...")
-# BRFSS 2023 ships with lowercase column names
 cols_needed_lower = [
-    '_michd',       # Target
-    '_ageg5yr',     # Age category
-    'sexvar',       # Sex
-    '_bmi5cat',     # BMI category
-    'smoke100',     # Ever smoked 100+ cigarettes
-    '_rfdrhv8',     # Heavy alcohol consumption (calculated)
-    'exerany2',     # Any exercise (Yes/No)
-    'exeroft1',     # Exercise frequency (encoded)
-    '_rfhype6',     # High blood pressure (calculated)
-    '_rfchol3',     # High cholesterol (calculated)
-    'diabete4',     # Diabetes
-    'cvdstrk3',     # Stroke
-    'chcocnc1',     # Other cancer (excludes skin)
-    'chccopd3',     # COPD
-    'chckdny2',     # Kidney disease
-    'addepev3',     # Depression
-    'menthlth',     # Days of poor mental health
-    'physhlth',     # Days of poor physical health (replaces GENHLTH)
+    '_michd',
+    '_ageg5yr',
+    'sexvar',
+    '_bmi5cat',
+    'smoke100',
+    '_rfdrhv8',
+    'exerany2',
+    'exeroft1',
+    '_rfhype6',
+    '_rfchol3',
+    'diabete4',
+    'cvdstrk3',
+    'chcocnc1',
+    'chccopd3',
+    'chckdny2',
+    'addepev3',
+    'menthlth',
+    'physhlth',
 ]
 df = pd.read_csv('BRFSS2023.csv', usecols=cols_needed_lower, low_memory=False)
 df.columns = [c.upper() for c in df.columns]
 
-# Drop rows where the target is missing
 df = df.dropna(subset=['_MICHD'])
 
-# ============== TARGET ==============
 df['HeartDisease'] = df['_MICHD'].replace({2.0: 0.0, 1.0: 1.0})
 
-# ============== AGE ==============
 df = df[df['_AGEG5YR'].between(1, 13)]
 df['Age'] = df['_AGEG5YR']
 
-# ============== SEX (Male=1, Female=0) ==============
 df['Sex'] = df['SEXVAR'].replace({1.0: 1.0, 2.0: 0.0})
 
-# ============== BMI CATEGORY ==============
 df['BMICategory'] = df['_BMI5CAT']
 
-# ============== SMOKING ==============
 df['Smoking'] = df['SMOKE100'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== HEAVY ALCOHOL ==============
 df['Alcohol'] = df['_RFDRHV8'].replace(
     {1.0: 0.0, 2.0: 1.0, 9.0: np.nan}
 )
 
-# ============== EXERCISE FREQUENCY (decoded to times-per-month) ==============
 def decode_exercise(row):
     any_ex = row['EXERANY2']
     freq = row['EXEROFT1']
@@ -94,57 +69,46 @@ def decode_exercise(row):
 
 df['ExerciseFreq'] = df.apply(decode_exercise, axis=1)
 
-# ============== HIGH BLOOD PRESSURE ==============
 df['HighBP'] = df['_RFHYPE6'].replace(
     {1.0: 0.0, 2.0: 1.0, 9.0: np.nan}
 )
 
-# ============== HIGH CHOLESTEROL ==============
 df['HighChol'] = df['_RFCHOL3'].replace(
     {1.0: 0.0, 2.0: 1.0, 9.0: np.nan}
 )
 
-# ============== DIABETES (3-level) ==============
 df['Diabetes'] = df['DIABETE4'].replace(
     {1.0: 2.0, 2.0: 1.0, 4.0: 1.0, 3.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== STROKE ==============
 df['Stroke'] = df['CVDSTRK3'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== OTHER CANCER ==============
 df['OtherCancer'] = df['CHCOCNC1'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== COPD ==============
 df['COPD'] = df['CHCCOPD3'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== KIDNEY DISEASE ==============
 df['KidneyDisease'] = df['CHCKDNY2'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== DEPRESSION ==============
 df['Depression'] = df['ADDEPEV3'].replace(
     {1.0: 1.0, 2.0: 0.0, 7.0: np.nan, 9.0: np.nan}
 )
 
-# ============== MENTAL HEALTH DAYS ==============
 df['MentalHealth'] = df['MENTHLTH'].replace(
     {88.0: 0.0, 77.0: np.nan, 99.0: np.nan}
 )
 
-# ============== PHYSICAL HEALTH DAYS (replaces General Health) ==============
 df['PhysicalHealth'] = df['PHYSHLTH'].replace(
     {88.0: 0.0, 77.0: np.nan, 99.0: np.nan}
 )
 
-# Final feature set (16 features) -- GeneralHealth -> PhysicalHealth
 FEATURES = [
     'Age', 'Sex', 'BMICategory', 'Smoking', 'Alcohol', 'ExerciseFreq',
     'HighBP', 'HighChol', 'Diabetes', 'Stroke',
@@ -205,7 +169,6 @@ with open('xgboost_model.pkl', 'wb') as f:
     pickle.dump(model, f)
 print("\nModel saved to xgboost_model.pkl")
 
-# Save all evaluation metrics to JSON so the app can display them
 tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 metrics_out = {
     'roc_auc':     float(roc_auc_score(y_test, y_proba)),
